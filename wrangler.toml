@@ -1,0 +1,4 @@
+name = "globe"
+main = "src/index.ts"
+compatibility_date = "2022-09-23"
+route = "globe.jwdn.cc"
