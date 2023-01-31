@@ -1,16 +1,11 @@
-export interface Env {
-  // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-  // MY_KV_NAMESPACE: KVNamespace;
-  //
-  // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-  // MY_DURABLE_OBJECT: DurableObjectNamespace;
-  //
-  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-  // MY_BUCKET: R2Bucket;
+export interface Env {}
+
+interface CustomProps extends IncomingRequestCfProperties {
+  ip: string | null;
 }
 
-const html = (latitude, longitude, ip) => {
-  console.log(latitude, longitude, ip);
+const html = (options: CustomProps) => {
+  console.log(JSON.stringify(options));
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -18,6 +13,10 @@ const html = (latitude, longitude, ip) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Where Am I?</title>
+	<link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌏</text></svg>"
+    />
 	<style>
 		body {
 			background: #000;
@@ -50,7 +49,7 @@ const html = (latitude, longitude, ip) => {
 			glowColor: [1, 1, 1],
 			markers: [
 				// longitude latitude
-				{ location: [${latitude},${longitude}], size: 0.1 },
+				{ location: [${options.latitude},${options.longitude}], size: 0.1 },
 			],
 			onRender: (state) => {
 				// Called on every animation frame.
@@ -69,7 +68,8 @@ const html = (latitude, longitude, ip) => {
 			width="600"
 			height="600"
 		></canvas>
-		<h1>${ip}</h1>
+		<h1>${options.ip}</h1>
+		<h2>${options.city}, ${options.country}</h2>
 	</div>
 </body>
 </html>
@@ -82,10 +82,10 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    const { latitude, longitude } = request.cf;
     const ip = request.headers.get("CF-Connecting-IP");
-    return new Response(html(latitude, longitude, ip), {
-      headers: { "content-type": "text/html" },
+    const options: CustomProps = { ip, ...request.cf };
+    return new Response(html(options), {
+      headers: { "content-type": "text/html; charset=utf-8" },
     });
   },
 };
